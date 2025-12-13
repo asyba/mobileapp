@@ -728,6 +728,19 @@ please disable the option.""".trimIndent(),
                     show = { pebbleFeatures.supportsCompanionDeviceManager() },
                 ),
                 basicSettingsToggleItem(
+                    title = "Disable FW update notifications",
+                    description = "Ignore notifications for users who sideload their own firmware",
+                    section = Section.Watch,
+                    checked = coreConfig.disableFirmwareUpdateNotifications,
+                    onCheckChanged = {
+                        coreConfigHolder.update(
+                            coreConfig.copy(
+                                disableFirmwareUpdateNotifications = it
+                            )
+                        )
+                    },
+                ),
+                basicSettingsToggleItem(
                     title = "Ignore Missing PRF",
                     description = "Ignore missing PRF when connecting to development watches",
                     section = Section.Watch,
