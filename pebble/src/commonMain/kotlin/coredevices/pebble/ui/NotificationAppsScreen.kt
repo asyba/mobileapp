@@ -56,16 +56,46 @@ class NotificationAppsScreenViewModel : ViewModel() {
 fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
     Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
         val viewModel = koinViewModel<NotificationAppsScreenViewModel>()
+        val platform = koinInject<Platform>()
 
         LaunchedEffect(Unit) {
             topBarParams.searchAvailable(true)
             topBarParams.actions {
+                if (platform == Platform.IOS) {
+                    val expanded = remember { mutableStateOf(false) }
+                    Box {
+                        androidx.compose.material3.IconButton(onClick = { expanded.value = true }) {
+                            Icon(Icons.AutoMirrored.Filled.Sort, "Sort")
+                        }
+                        DropdownMenu(
+                            expanded = expanded.value,
+                            onDismissRequest = { expanded.value = false }
+                        ) {
+                            NotificationAppSort.entries.filter { 
+                                it != NotificationAppSort.Count || platform != Platform.IOS 
+                            }.forEach { sortOption ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    onClick = {
+                                        viewModel.sortBy.value = sortOption
+                                        expanded.value = false
+                                    },
+                                    text = { Text(sortOption.name) },
+                                    leadingIcon = {
+                                        if (viewModel.sortBy.value == sortOption) Icon(
+                                            imageVector = Icons.Filled.Done,
+                                            contentDescription = "Done"
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
             topBarParams.canGoBack(false)
         }
 
         val notificationApi: NotificationApps = koinInject()
-        val platform = koinInject<Platform>()
         val appsFlow = remember { notificationApi.notificationApps() }
         val apps by appsFlow.collectAsState(emptyList())
         val bootConfig = rememberBootConfig()
@@ -178,7 +208,9 @@ fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
                             expanded = expanded.value,
                             onDismissRequest = { expanded.value = false }
                         ) {
-                            NotificationAppSort.entries.forEach { sortOption ->
+                            NotificationAppSort.entries.filter { 
+                                it != NotificationAppSort.Count || platform != Platform.IOS 
+                            }.forEach { sortOption ->
                                 androidx.compose.material3.DropdownMenuItem(
                                     onClick = {
                                         viewModel.sortBy.value = sortOption
