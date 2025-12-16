@@ -56,42 +56,11 @@ class NotificationAppsScreenViewModel : ViewModel() {
 fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
     Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
         val viewModel = koinViewModel<NotificationAppsScreenViewModel>()
+        val pebbleFeatures: PebbleFeatures = koinInject()
         val platform = koinInject<Platform>()
 
         LaunchedEffect(Unit) {
             topBarParams.searchAvailable(true)
-            topBarParams.actions {
-                if (platform == Platform.IOS) {
-                    val expanded = remember { mutableStateOf(false) }
-                    Box {
-                        androidx.compose.material3.IconButton(onClick = { expanded.value = true }) {
-                            Icon(Icons.AutoMirrored.Filled.Sort, "Sort")
-                        }
-                        DropdownMenu(
-                            expanded = expanded.value,
-                            onDismissRequest = { expanded.value = false }
-                        ) {
-                            NotificationAppSort.entries.filter { 
-                                it != NotificationAppSort.Count || platform != Platform.IOS 
-                            }.forEach { sortOption ->
-                                androidx.compose.material3.DropdownMenuItem(
-                                    onClick = {
-                                        viewModel.sortBy.value = sortOption
-                                        expanded.value = false
-                                    },
-                                    text = { Text(sortOption.name) },
-                                    leadingIcon = {
-                                        if (viewModel.sortBy.value == sortOption) Icon(
-                                            imageVector = Icons.Filled.Done,
-                                            contentDescription = "Done"
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             topBarParams.canGoBack(false)
         }
 
@@ -99,7 +68,6 @@ fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
         val appsFlow = remember { notificationApi.notificationApps() }
         val apps by appsFlow.collectAsState(emptyList())
         val bootConfig = rememberBootConfig()
-        val pebbleFeatures: PebbleFeatures = koinInject()
         val libPebble = rememberLibPebble()
         val libPebbleConfig by libPebble.config.collectAsState()
         val filteredAndSortedApps by remember(
@@ -145,15 +113,19 @@ fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
                             .weight(1f),
                         contentAlignment = Alignment.Center,
                     ) {
+                        val notifiedOnlyEnabled = pebbleFeatures.supportsNotifiedOnlyFilter()
                         ElevatedFilterChip(
                             onClick = {
-                                viewModel.onlyNotified.value =
-                                    !viewModel.onlyNotified.value
+                                if (notifiedOnlyEnabled) {
+                                    viewModel.onlyNotified.value =
+                                        !viewModel.onlyNotified.value
+                                }
                             },
                             label = {
                                 Text("Notified only")
                             },
                             selected = viewModel.onlyNotified.value,
+                            enabled = notifiedOnlyEnabled,
                             leadingIcon = if (viewModel.onlyNotified.value) {
                                 {
                                     Icon(
@@ -209,7 +181,7 @@ fun NotificationAppsScreen(topBarParams: TopBarParams, nav: NavBarNav) {
                             onDismissRequest = { expanded.value = false }
                         ) {
                             NotificationAppSort.entries.filter { 
-                                it != NotificationAppSort.Count || platform != Platform.IOS 
+                                it != NotificationAppSort.Count || pebbleFeatures.supportsNotificationCountSorting()
                             }.forEach { sortOption ->
                                 androidx.compose.material3.DropdownMenuItem(
                                     onClick = {
