@@ -15,3 +15,8 @@ actual fun makeTokenClipEntry(token: String): ClipEntry = ClipEntry(ClipData.new
 actual fun getPlatformSTTLanguages(): List<Pair<String, String>> {
     return listOf("en-US" to "English (US)")
 }
+
+actual fun getCacheDir(): String {
+    val context = KoinPlatform.getKoin().get<Context>().applicationContext
+    return context.cacheDir.absolutePath
+}

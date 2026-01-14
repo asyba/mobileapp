@@ -108,13 +108,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.buffered
+import kotlinx.io.readString
+import kotlinx.io.writeString
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import PlatformShareLauncher
+import rememberOpenDocumentLauncher
+import DocumentAttachment
+import io.rebble.libpebblecommon.database.dao.NotificationAppRealDao
+import io.rebble.libpebblecommon.database.entity.NotificationAppItem
+import io.rebble.libpebblecommon.database.entity.MuteState
+import io.rebble.libpebblecommon.database.entity.ChannelGroup
+import io.rebble.libpebblecommon.database.asMillisecond
+import kotlin.time.Clock
+import kotlin.time.Instant
 import theme.CoreAppTheme
 import theme.ThemeProvider
 
@@ -250,6 +269,14 @@ fun WatchSettingsScreen(navBarNav: NavBarNav, topBarParams: TopBarParams) {
         var showBtClassicInfoDialog by remember { mutableStateOf(false) }
         var showLockerImportDialog by remember { mutableStateOf(false) }
         var debugOptionsEnabled by remember { mutableStateOf(settings.showDebugOptions()) }
+        val platformShareLauncher: PlatformShareLauncher = koinInject()
+        val openDocumentLauncher = rememberOpenDocumentLauncher { attachments ->
+            if (attachments != null && attachments.isNotEmpty()) {
+                scope.launch {
+                    importNotificationApps(attachments.first(), topBarParams, libPebble)
+                }
+            }
+        }
         var speechRecognitionEnabled by mutableStateOf(
             CactusSTTMode.fromId(settings.getInt(SettingsKeys.KEY_CACTUS_MODE, 0))
         )
@@ -1059,6 +1086,38 @@ please disable the option.""".trimIndent(),
                     },
                     show = { debugOptionsEnabled },
                 ),
+                basicSettingsActionItem(
+                    title = "Export Notification Apps",
+                    description = "Export notification app settings to JSON file",
+                    section = Section.Debug,
+                    action = {
+                scope.launch {
+                    exportNotificationApps(topBarParams, platformShareLauncher, libPebble)
+                }
+                    },
+                    show = { debugOptionsEnabled },
+                ),
+                SettingsItem(
+                    title = "Import Notification Apps",
+                    section = Section.Debug,
+                    item = {
+                        ListItem(
+                            headlineContent = {
+                                PebbleElevatedButton(
+                                    onClick = { openDocumentLauncher(listOf("application/json")) },
+                                    text = "Import Notification Apps",
+                                    primaryColor = false,
+                                    modifier = Modifier.padding(bottom = 5.dp)
+                                )
+                            },
+                            supportingContent = {
+                                Text("Import notification app settings from JSON file", fontSize = 12.sp)
+                            },
+                            shadowElevation = ELEVATION,
+                        )
+                    },
+                    show = { debugOptionsEnabled },
+                ),
                 SettingsItem(
                     title = TITLE_PKJS_TOKEN,
                     section = Section.Debug,
@@ -1628,6 +1687,128 @@ fun STTModeDialogPreview() {
 }
 
 expect fun makeTokenClipEntry(token: String): ClipEntry
+
+@Serializable
+private data class NotificationAppItemExport(
+    val packageName: String,
+    val name: String,
+    val muteState: String,
+    val channelGroups: List<@Serializable ChannelGroup>,
+    val stateUpdated: Long,
+    val lastNotified: Long,
+    val vibePatternName: String?,
+    val colorName: String?,
+    val iconCode: String?,
+)
+
+@Serializable
+private data class NotificationAppsExport(
+    val apps: List<NotificationAppItemExport>,
+    val exportDate: Long,
+    val version: Int = 1
+)
+
+private suspend fun exportNotificationApps(
+    topBarParams: TopBarParams,
+    platformShareLauncher: PlatformShareLauncher,
+    libPebble: LibPebble,
+) = withContext(Dispatchers.IO) {
+    try {
+        // Get apps through NotificationApps interface
+        val appsWithCounts = libPebble.notificationApps().first()
+        val apps = appsWithCounts.map { it.app }
+        val exportApps = apps.map { app ->
+            NotificationAppItemExport(
+                packageName = app.packageName,
+                name = app.name,
+                muteState = app.muteState.name,
+                channelGroups = app.channelGroups,
+                stateUpdated = app.stateUpdated.instant.epochSeconds * 1000,
+                lastNotified = app.lastNotified.instant.epochSeconds * 1000,
+                vibePatternName = app.vibePatternName,
+                colorName = app.colorName,
+                iconCode = app.iconCode,
+            )
+        }
+        val export = NotificationAppsExport(
+            apps = exportApps,
+            exportDate = Clock.System.now().epochSeconds,
+        )
+        val json = Json { prettyPrint = true }.encodeToString(export)
+        
+        // Save to temporary file
+        val cacheDir = getCacheDir()
+        val timestamp = Clock.System.now().epochSeconds
+        val fileName = "notification_apps_backup_$timestamp.json"
+        val filePath = Path(cacheDir, fileName)
+        
+        SystemFileSystem.sink(filePath, append = false).buffered().use { sink ->
+            sink.writeString(json)
+        }
+        
+        withContext(Dispatchers.Main) {
+            platformShareLauncher.share(
+                text = "Notification Apps Backup",
+                file = filePath
+            )
+            topBarParams.showSnackbar("Exported ${apps.size} notification apps")
+        }
+    } catch (e: Exception) {
+        logger.e(e) { "Error exporting notification apps" }
+        withContext(Dispatchers.Main) {
+            topBarParams.showSnackbar("Error exporting: ${e.message}")
+        }
+    }
+}
+
+private suspend fun importNotificationApps(
+    attachment: DocumentAttachment,
+    topBarParams: TopBarParams,
+    libPebble: LibPebble,
+) = withContext(Dispatchers.IO) {
+    try {
+        val jsonString = attachment.source.buffered().use { it.readString() }
+        val export = Json.decodeFromString<NotificationAppsExport>(jsonString)
+        
+        val now = Clock.System.now()
+        val nowMillis = now.asMillisecond()
+        val distantPast = Instant.DISTANT_PAST.asMillisecond()
+        
+        // Import each app - create new ones or update existing ones
+        export.apps.forEach { exportedApp ->
+            val muteState = try {
+                MuteState.valueOf(exportedApp.muteState)
+            } catch (e: Exception) {
+                MuteState.Never
+            }
+            
+            val importedApp = NotificationAppItem(
+                packageName = exportedApp.packageName,
+                name = exportedApp.name,
+                muteState = muteState,
+                channelGroups = exportedApp.channelGroups,
+                stateUpdated = nowMillis, // Sobrescribir con fecha actual
+                lastNotified = distantPast, // Usar DISTANT_PAST como valor por defecto
+                vibePatternName = exportedApp.vibePatternName,
+                colorName = exportedApp.colorName,
+                iconCode = exportedApp.iconCode,
+            )
+            
+            libPebble.insertOrReplaceNotificationApp(importedApp)
+        }
+        
+        withContext(Dispatchers.Main) {
+            topBarParams.showSnackbar("Imported ${export.apps.size} notification apps")
+        }
+    } catch (e: Exception) {
+        logger.e(e) { "Error importing notification apps" }
+        withContext(Dispatchers.Main) {
+            topBarParams.showSnackbar("Error importing: ${e.message}")
+        }
+    }
+}
+
+expect fun getCacheDir(): String
 
 object SettingsKeys {
     const val KEY_ENABLE_MEMFAULT_UPLOADS = "enable_memfault_uploads"

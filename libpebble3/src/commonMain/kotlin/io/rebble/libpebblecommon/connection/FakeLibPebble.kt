@@ -228,6 +228,10 @@ class FakeLibPebble : LibPebble {
         TODO("Not yet implemented")
     }
 
+    override suspend fun insertOrReplaceNotificationApp(app: NotificationAppItem) {
+        // No-op for fake implementation
+    }
+
     override fun updateNotificationChannelMuteState(
         packageName: String,
         channelId: String,

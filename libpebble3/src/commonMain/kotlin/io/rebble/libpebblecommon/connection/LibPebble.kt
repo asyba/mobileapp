@@ -25,6 +25,7 @@ import io.rebble.libpebblecommon.database.dao.TimelineNotificationRealDao
 import io.rebble.libpebblecommon.database.dao.VibePatternDao
 import io.rebble.libpebblecommon.database.entity.CalendarEntity
 import io.rebble.libpebblecommon.database.entity.MuteState
+import io.rebble.libpebblecommon.database.entity.NotificationAppItem
 import io.rebble.libpebblecommon.database.entity.NotificationEntity
 import io.rebble.libpebblecommon.database.entity.TimelineNotification
 import io.rebble.libpebblecommon.database.entity.TimelinePin
@@ -234,6 +235,12 @@ interface NotificationApps {
         channelId: String,
         muteState: MuteState,
     )
+
+    /**
+     * Insert or replace a notification app. Used for importing/restoring apps.
+     * This will create the app if it doesn't exist, or update it if it does.
+     */
+    suspend fun insertOrReplaceNotificationApp(app: NotificationAppItem)
 
     /** Will only return a value on Android */
     suspend fun getAppIcon(packageName: String): ImageBitmap?

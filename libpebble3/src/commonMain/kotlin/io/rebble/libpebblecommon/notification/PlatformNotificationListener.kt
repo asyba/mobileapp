@@ -11,6 +11,7 @@ import io.rebble.libpebblecommon.database.dao.NotificationAppRealDao
 import io.rebble.libpebblecommon.database.dao.NotificationDao
 import io.rebble.libpebblecommon.database.dao.VibePatternDao
 import io.rebble.libpebblecommon.database.entity.MuteState
+import io.rebble.libpebblecommon.database.entity.NotificationAppItem
 import io.rebble.libpebblecommon.database.entity.NotificationEntity
 import io.rebble.libpebblecommon.database.entity.VibePatternEntity
 import io.rebble.libpebblecommon.di.LibPebbleCoroutineScope
@@ -112,6 +113,10 @@ class NotificationApi(
                 })
             }))
         }
+    }
+
+    override suspend fun insertOrReplaceNotificationApp(app: NotificationAppItem) {
+        notificationAppDao.insertOrReplace(app)
     }
 
     override suspend fun getAppIcon(packageName: String): ImageBitmap? {
