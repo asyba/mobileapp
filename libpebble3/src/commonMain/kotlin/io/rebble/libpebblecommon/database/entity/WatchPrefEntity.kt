@@ -38,7 +38,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 import kotlin.uuid.Uuid
 
 @Immutable
@@ -50,6 +50,7 @@ import kotlin.uuid.Uuid
     onlyInsertAfter = false,
     sendDeletions = true,
 )
+@Serializable
 data class WatchPrefItem(
     val id: String,
     val value: String,

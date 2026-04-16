@@ -2,7 +2,7 @@ package coredevices.pebble.ui
 
 import CommonRoutes
 import NextBugReportContext
-import PlatformShareLauncher
+import coredevices.util.PlatformShareLauncher
 import PlatformUiContext
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode

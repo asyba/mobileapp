@@ -11,8 +11,9 @@ import io.rebble.libpebblecommon.metadata.WatchColor
 import io.rebble.libpebblecommon.metadata.WatchColor.Companion.fromProtocolNumber
 import io.rebble.libpebblecommon.packets.ProtocolCapsFlag
 import io.rebble.libpebblecommon.packets.blobdb.TimelineItem
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -21,7 +22,7 @@ import kotlin.uuid.Uuid
 private val json = Json { ignoreUnknownKeys = true }
 private val logger = Logger.withTag("RoomTypeConverters")
 
-// Hashcode on Duration can vary (because nanoseconds) before/after serialization (which is only milliseconds)
+@Serializable
 data class MillisecondDuration(val duration: Duration) {
     override fun hashCode(): Int = duration.inWholeMilliseconds.hashCode()
     override fun equals(other: Any?): Boolean = (other as? MillisecondDuration)?.duration?.inWholeMilliseconds == duration.inWholeMilliseconds
@@ -29,7 +30,7 @@ data class MillisecondDuration(val duration: Duration) {
 
 fun Duration.asMillisecond(): MillisecondDuration = MillisecondDuration(this)
 
-// Hashcode on Instant can vary (because nanoseconds) before/after serialization (which is only milliseconds)
+@Serializable
 data class MillisecondInstant(val instant: Instant) {
     override fun hashCode(): Int = instant.toEpochMilliseconds().hashCode()
     override fun equals(other: Any?): Boolean = (other as? MillisecondInstant)?.instant?.toEpochMilliseconds() == instant.toEpochMilliseconds()

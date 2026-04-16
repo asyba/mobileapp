@@ -169,6 +169,9 @@ interface LockerEntryRealDao : LockerEntryDao {
         _setActiveForUuid(uuid.toString())
     }
 
+    @Query("SELECT * FROM LockerEntryEntity WHERE deleted = 0")
+    suspend fun getAllEntries(): List<LockerEntry>
+
     @Query("""
         SELECT * FROM LockerEntryEntity
         WHERE active = 1

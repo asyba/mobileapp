@@ -2,6 +2,8 @@ package coredevices.pebble
 
 import co.touchlab.kermit.Logger
 import com.algolia.client.api.SearchClient
+import io.rebble.libpebblecommon.LibPebbleConfigHolder
+import coredevices.util.backup.BackupProvider
 import com.viktormykhailiv.kmp.health.HealthManagerFactory
 import coredevices.pebble.account.BootConfigProvider
 import coredevices.pebble.account.FirestoreLocker
@@ -30,6 +32,9 @@ import coredevices.pebble.services.PebbleHttpClient
 import coredevices.pebble.services.PebbleWebServices
 import coredevices.pebble.services.RealAppstoreCache
 import coredevices.pebble.services.RealPebbleWebServices
+import coredevices.pebble.account.backup.LockerBackupProvider
+import coredevices.pebble.account.backup.NotificationBackupProvider
+import coredevices.pebble.account.backup.SettingsBackupProvider
 import coredevices.pebble.ui.AppStoreCollectionScreenViewModel
 import coredevices.pebble.ui.AppstoreSettingsScreenViewModel
 import coredevices.pebble.ui.ContactsViewModel
@@ -182,6 +187,16 @@ val watchModule = module {
     }
     factory { NotificationConfig() }
     factory { BleConfig() }
+
+    single {
+        LockerBackupProvider(
+            get<LibPebble>().database.lockerEntryDao(),
+            get(),
+            get<LibPebble>().config.value.watchConfig.lockerSyncLimitV2
+        )
+    } bind BackupProvider::class
+    single { NotificationBackupProvider(get<LibPebble>().database.notificationAppDao(), get()) } bind BackupProvider::class
+    single { SettingsBackupProvider(get(), get<LibPebble>(), get()) } bind BackupProvider::class
     single {
         Json {
             // Important that everything uses this - otherwise future additions to web apis will

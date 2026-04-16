@@ -1,5 +1,7 @@
 package io.rebble.libpebblecommon.database.entity
 
+import androidx.room.Dao
+import androidx.room.Query
 import coredev.BlobDatabase
 import coredev.GenerateRoomEntity
 import io.rebble.libpebblecommon.database.dao.BlobDbItem
@@ -25,6 +27,7 @@ import kotlin.uuid.Uuid
     onlyInsertAfter = false,
     sendDeletions = true,
 )
+@Serializable
 data class AppPrefsEntry(
     val id: String,
     val value: String,
@@ -55,6 +58,12 @@ suspend fun AppPrefsEntryDao.setWeatherSettings(weatherPrefs: WeatherPrefsValue)
             value = weatherPrefs.encodeToString(),
         )
     )
+}
+
+@Dao
+interface AppPrefsRealDao : AppPrefsEntryDao {
+    @Query("SELECT * FROM AppPrefsEntryEntity")
+    suspend fun getAll(): List<AppPrefsEntry>
 }
 
 @Serializable

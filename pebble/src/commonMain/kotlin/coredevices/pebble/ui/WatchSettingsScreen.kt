@@ -139,9 +139,21 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import coredevices.util.backup.BackupManager
+import coredevices.util.PlatformShareLauncher
+import coredevices.util.rememberOpenDocumentLauncher
+import coredevices.util.DocumentAttachment
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.files.Path
+import kotlinx.io.asSource
+import kotlinx.io.readString
+import kotlinx.io.buffered
+import kotlinx.io.files.SystemTemporaryDirectory
+import kotlinx.io.writeString
 import theme.CoreAppTheme
 import theme.ThemeProvider
 import kotlin.math.roundToLong
@@ -304,6 +316,25 @@ fun rememberSettingsItemsState(navBarNav: NavBarNav?, snackbarDisplay: SnackbarD
     var pendingSTTModeDialog by remember { mutableStateOf<CactusSTTMode?>(null) }
     val recommendedSTTModel = modelManager.getRecommendedSTTModel()
     val modelDownloadState by modelManager.modelDownloadStatus.collectAsState()
+    val backupManager = koinInject<BackupManager>()
+    val shareLauncher = koinInject<PlatformShareLauncher>()
+
+    val openDocumentLauncher = rememberOpenDocumentLauncher { attachments ->
+        attachments?.firstOrNull()?.let { attachment ->
+            scope.launch {
+                try {
+                    val jsonString = attachment.source.buffered().readString()
+                    backupManager.restoreFromBackupJson(jsonString, merge = true)
+                    // Trigger a sync after restore
+                    libPebble.requestLockerSync()
+                    snackbarDisplay.showSnackbar("Backup restored successfully")
+                } catch (e: Exception) {
+                    logger.e(e) { "Failed to restore backup" }
+                    snackbarDisplay.showSnackbar("Failed to restore backup")
+                }
+            }
+        }
+    }
     pendingSTTModeDialog?.let { pendingSTTMode ->
         val recommendedModel by produceState<ModelInfo?>(null) {
             withContext(Dispatchers.Default) {
@@ -1385,6 +1416,34 @@ please disable the option.""".trimIndent(),
                     section = Section.General,
                     action = { showSignInDialog = true },
                     show = { coreUser == null },
+                ),
+                basicSettingsActionItem(
+                    title = "Export Local Backup",
+                    description = "Save your Locker, Notification settings and App config to a local JSON file.",
+                    topLevelType = TopLevelType.Phone,
+                    section = Section.General,
+                    action = {
+                        scope.launch {
+                            try {
+                                val jsonString = backupManager.createBackupJson()
+                                val tempDir = SystemTemporaryDirectory
+                                val tempFile = Path(tempDir, "pebble_backup_${Clock.System.now().toEpochMilliseconds()}.json")
+                                SystemFileSystem.sink(tempFile).buffered().use { it.writeString(jsonString) }
+                                shareLauncher.share(text = "Pebble Local Backup", file = tempFile)
+                            } catch (e: Exception) {
+                                logger.e(e) { "Failed to export backup" }
+                            }
+                        }
+                    }
+                ),
+                basicSettingsActionItem(
+                    title = "Import Local Backup",
+                    description = "Restore your data from a previously exported JSON file. (Merge mode: won't delete existing data)",
+                    topLevelType = TopLevelType.Phone,
+                    section = Section.General,
+                    action = {
+                        openDocumentLauncher(listOf("public.json", "application/json"))
+                    }
                 ),
                 basicSettingsActionItem(
                     title = "Sign Out - Rebble",

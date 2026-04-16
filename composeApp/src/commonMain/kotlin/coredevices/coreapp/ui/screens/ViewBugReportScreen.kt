@@ -51,7 +51,7 @@ import dev.gitlive.firebase.auth.auth
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rememberOpenDocumentLauncher
+import coredevices.util.rememberOpenDocumentLauncher
 
 private val logger = Logger.withTag("ViewBugReportScreen")
 

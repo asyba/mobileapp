@@ -1,3 +1,4 @@
+package coredevices.util
 import kotlinx.io.Source
 
 data class DocumentAttachment(

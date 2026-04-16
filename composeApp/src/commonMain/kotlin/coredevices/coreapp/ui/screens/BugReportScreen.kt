@@ -2,9 +2,9 @@ package coredevices.coreapp.ui.screens
 
 import CommonRoutes
 import CoreNav
-import DocumentAttachment
+import coredevices.util.DocumentAttachment
 import NextBugReportContext
-import PlatformShareLauncher
+import coredevices.util.PlatformShareLauncher
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -93,8 +93,10 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rememberOpenDocumentLauncher
-import rememberOpenPhotoLauncher
+import coredevices.util.rememberOpenDocumentLauncher
+
+import coredevices.util.rememberOpenPhotoLauncher
+
 import size
 
 expect fun isThirdPartyTest(): Boolean

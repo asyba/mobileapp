@@ -32,6 +32,8 @@ import coredevices.util.transcription.CactusModelPathProvider
 import coredevices.util.transcription.CactusTranscriptionService
 import coredevices.util.transcription.TranscriptionService
 import coredevices.util.transcription.WisprFlowTranscriptionService
+import coredevices.util.backup.BackupManager
+import coredevices.util.backup.BackupProvider
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.FirebaseFirestoreSettings
@@ -104,4 +106,6 @@ val utilModule = module {
     single<UsersDao> { UsersDaoImpl({ get() }, get()) }
     singleOf(::HealthSyncTracker)
     singleOf(::PlatformHealthSync)
+
+    single { BackupManager(getAll(), get()) }
 }

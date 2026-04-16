@@ -24,6 +24,7 @@ import io.rebble.libpebblecommon.database.dao.VibePatternDao
 import io.rebble.libpebblecommon.database.dao.WatchPrefRealDao
 import io.rebble.libpebblecommon.database.dao.WeatherAppRealDao
 import io.rebble.libpebblecommon.database.entity.AppPrefsEntryDao
+import io.rebble.libpebblecommon.database.entity.AppPrefsRealDao
 import io.rebble.libpebblecommon.database.entity.AppPrefsEntryEntity
 import io.rebble.libpebblecommon.database.entity.AppPrefsEntrySyncEntity
 import io.rebble.libpebblecommon.database.entity.CalendarEntity
@@ -138,7 +139,7 @@ abstract class Database : RoomDatabase() {
     abstract fun healthStatDao(): HealthStatDao
     abstract fun watchPrefDao(): WatchPrefRealDao
     abstract fun weatherAppDao(): WeatherAppRealDao
-    abstract fun appPrefsDao(): AppPrefsEntryDao
+    abstract fun appPrefsDao(): AppPrefsRealDao
 }
 
 @DeleteTable(tableName = "WatchSettingsEntity")

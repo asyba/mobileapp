@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 import io.rebble.libpebblecommon.timeline.toPebbleColor
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 
 @Immutable
 @GenerateRoomEntity(
@@ -36,6 +36,7 @@ import kotlin.time.Instant
     onlyInsertAfter = false,
     sendDeletions = true,
 )
+@Serializable
 data class NotificationAppItem(
     val packageName: String,
     val name: String,

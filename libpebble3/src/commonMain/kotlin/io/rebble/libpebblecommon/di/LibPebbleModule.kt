@@ -100,6 +100,8 @@ import io.rebble.libpebblecommon.database.dao.TimelineNotificationRealDao
 import io.rebble.libpebblecommon.database.entity.LockerEntryDao
 import io.rebble.libpebblecommon.database.entity.NotificationAppItemDao
 import io.rebble.libpebblecommon.database.entity.TimelineNotificationDao
+import io.rebble.libpebblecommon.database.entity.AppPrefsEntryDao
+import io.rebble.libpebblecommon.database.entity.AppPrefsRealDao
 import io.rebble.libpebblecommon.database.getRoomDatabase
 import io.rebble.libpebblecommon.datalogging.Datalogging
 import io.rebble.libpebblecommon.datalogging.HealthDataProcessor
@@ -356,7 +358,7 @@ fun initKoin(
                 singleOf(::HealthDataProcessor)
                 single { get<Database>().watchPrefDao() }
                 single { get<Database>().weatherAppDao() }
-                single { get<Database>().appPrefsDao() }
+                single { get<Database>().appPrefsDao() } binds arrayOf(AppPrefsEntryDao::class, AppPrefsRealDao::class)
                 singleOf(::WatchManager) bind WatchConnector::class
                 single { bleScanner() }
                 singleOf(::RealScanning) bind Scanning::class
@@ -374,6 +376,7 @@ fun initKoin(
                 single { createTimeChanged(get()) }
                 single {
                     LibPebble3(
+                        get(),
                         get(),
                         get(),
                         get(),

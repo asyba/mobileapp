@@ -26,6 +26,7 @@ private val logger = Logger.withTag("LockerEntry")
     onlyInsertAfter = false,
     sendDeletions = true,
 )
+@Serializable
 data class LockerEntry(
     val id: Uuid,
     val version: String,
@@ -105,6 +106,7 @@ fun LockerEntry.asMetadata(platform: WatchType): AppMetadata? {
     )
 }
 
+@Serializable
 data class LockerEntryAppstoreData(
     val hearts: Int,
     val developerId: String,

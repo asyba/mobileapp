@@ -121,7 +121,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import rememberOpenDocumentLauncher
+import coredevices.util.rememberOpenDocumentLauncher
+
 import theme.coreDarkGreen
 import theme.coreOrange
 import kotlin.uuid.Uuid

@@ -2,7 +2,7 @@ package coredevices.coreapp.di
 
 import CoreAppVersion
 import PlatformContext
-import PlatformShareLauncher
+import coredevices.util.PlatformShareLauncher
 import coredevices.ExperimentalDevices
 import coredevices.coreapp.auth.RealAppleAuthUtil
 import coredevices.coreapp.auth.RealGithubAuthUtil

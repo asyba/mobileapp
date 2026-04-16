@@ -59,7 +59,10 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rememberOpenDocumentLauncher
+import coredevices.util.rememberOpenDocumentLauncher
+import coredevices.util.DocumentAttachment
+import kotlinx.io.buffered
+
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 

@@ -84,7 +84,7 @@ sealed class PebbleConnectionEvent {
 @Stable
 interface LibPebble : Scanning, RequestSync, LockerApi, NotificationApps, CallManagement, Calendar,
     OtherPebbleApps, PKJSToken, Watches, Errors, Contacts, AnalyticsEvents, HealthApi, WatchPrefs,
-    SystemGeolocation, Timeline, Vibrations, Weather, HealthDataApi {
+    SystemGeolocation, Timeline, Vibrations, Weather, HealthDataApi, DatabaseProvider {
     fun init()
 
     val config: StateFlow<LibPebbleConfig>
@@ -136,6 +136,10 @@ interface HealthDataApi {
     suspend fun getLatestTimestamp(): Long?
     suspend fun getHealthDataAfter(afterTimestamp: Long): List<HealthDataEntity>
     suspend fun getOverlayEntriesAfter(afterTimestamp: Long, types: List<Int>): List<OverlayDataEntity>
+}
+
+interface DatabaseProvider {
+    val database: io.rebble.libpebblecommon.database.Database
 }
 
 interface Weather {
@@ -329,13 +333,14 @@ class LibPebble3(
     private val vibePatternDao: VibePatternDao,
     private val watchPreferences: WatchPrefs,
     private val weatherManager: WeatherManager,
+    override val database: io.rebble.libpebblecommon.database.Database,
 ) : LibPebble, Scanning by scanning, RequestSync by webSyncManager, LockerApi by locker,
     NotificationApps by notificationApi, Calendar by phoneCalendarSyncer,
     OtherPebbleApps by otherPebbleApps, PKJSToken by jsTokenUtil, Watches by watchManager,
     Errors by errorTracker, Contacts by contacts, AnalyticsEvents by analytics,
     HealthApi by health, SystemGeolocation by systemGeolocation, Timeline by timeline,
     Vibrations by notificationApi, WatchPrefs by watchPreferences, Weather by weatherManager,
-    HealthDataApi by health {
+    HealthDataApi by health, DatabaseProvider {
     private val logger = Logger.withTag("LibPebble3")
     private val initialized = AtomicBoolean(false)
 

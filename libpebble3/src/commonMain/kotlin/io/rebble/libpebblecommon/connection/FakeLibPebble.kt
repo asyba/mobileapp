@@ -428,6 +428,9 @@ class FakeLibPebble : LibPebble {
         afterTimestamp: Long,
         types: List<Int>
     ): List<OverlayDataEntity> = emptyList()
+
+    override val database: io.rebble.libpebblecommon.database.Database
+        get() = TODO("Not yet implemented")
 }
 
 fun fakeWatches(): List<PebbleDevice> {

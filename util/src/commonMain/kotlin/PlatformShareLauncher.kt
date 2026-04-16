@@ -1,3 +1,4 @@
+package coredevices.util
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.io.files.Path
 

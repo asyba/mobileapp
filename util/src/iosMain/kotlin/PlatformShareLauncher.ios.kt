@@ -1,3 +1,4 @@
+package coredevices.util
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import kotlinx.cinterop.cValuesOf

@@ -1,6 +1,6 @@
 package coredevices.coreapp.ui.screens
 
-import DocumentAttachment
+import coredevices.util.DocumentAttachment
 import co.touchlab.kermit.Logger
 import com.oldguy.common.io.File
 import com.oldguy.common.io.FileMode

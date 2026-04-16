@@ -2,7 +2,7 @@ package coredevices
 
 import BugReportButton
 import CoreNav
-import DocumentAttachment
+import coredevices.util.DocumentAttachment
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AudioFile
@@ -39,7 +39,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import org.koin.compose.koinInject
-import rememberOpenDocumentLauncher
+import coredevices.util.rememberOpenDocumentLauncher
 import size
 import kotlin.time.Clock
 
