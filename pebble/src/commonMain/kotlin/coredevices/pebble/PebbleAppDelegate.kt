@@ -8,8 +8,8 @@ import coredevices.analytics.heartbeatWatchConnectedName
 import coredevices.database.WeatherLocationDao
 import coredevices.database.insertDefaultWeatherLocationOnce
 import coredevices.firestore.UsersDao
+import coredevices.pebble.firmware.BatteryChargedNotifier
 import coredevices.pebble.firmware.FirmwareUpdateUiTracker
-import coredevices.pebble.firmware.postWatchFullyChargedNotification
 import coredevices.pebble.services.AppstoreSourceInitializer
 import coredevices.pebble.services.AnalyticsHeartbeatQueue
 import coredevices.pebble.services.MemfaultChunkQueue
@@ -19,7 +19,6 @@ import coredevices.util.DoneInitialOnboarding
 import coredevices.util.PermissionRequester
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.crashlytics.crashlytics
-import io.rebble.libpebblecommon.connection.AppContext
 import io.rebble.libpebblecommon.connection.BleDiscoveredPebbleDevice
 import io.rebble.libpebblecommon.connection.CommonConnectedDevice
 import io.rebble.libpebblecommon.connection.ConnectedPebble
@@ -30,7 +29,6 @@ import io.rebble.libpebblecommon.connection.FirmwareUpdateCheckResult
 import io.rebble.libpebblecommon.connection.KnownPebbleDevice
 import io.rebble.libpebblecommon.connection.LibPebble
 import io.rebble.libpebblecommon.connection.PebbleDevice
-import io.rebble.libpebblecommon.connection.PebbleIdentifier
 import io.rebble.libpebblecommon.connection.endpointmanager.FirmwareUpdater
 import io.rebble.libpebblecommon.metadata.WatchHardwarePlatform
 import kotlinx.coroutines.CoroutineScope
@@ -61,7 +59,7 @@ class PebbleAppDelegate(
     private val memfaultChunkQueue: MemfaultChunkQueue,
     private val analyticsHeartbeatQueue: AnalyticsHeartbeatQueue,
     private val pebbleWebServices: PebbleWebServices,
-    private val appContext: AppContext,
+    private val batteryChargedNotifier: BatteryChargedNotifier,
 ) {
     private val logger = Logger.withTag("PebbleAppDelegate")
 
@@ -142,6 +140,11 @@ class PebbleAppDelegate(
                         }
                         if (watch is CommonConnectedDevice) {
                             usersDao.updateLastConnectedWatch(watch.serial)
+                            batteryChargedNotifier.onBatteryLevel(
+                                watch.identifier,
+                                watch.name,
+                                watch.batteryLevel,
+                            )
                         }
                     }
                     watches.groupBy { it.watchType() }.forEach { (watchType, watches) ->
@@ -160,25 +163,6 @@ class PebbleAppDelegate(
                             connectGoal,
                             clock.now(),
                         )
-                    }
-                }
-            }
-            GlobalScope.launch {
-                val batteryLevels = mutableMapOf<PebbleIdentifier, Int?>()
-                val notified100 = mutableMapOf<PebbleIdentifier, Boolean>()
-                libPebble.watches.collect { watches ->
-                    watches.filterIsInstance<CommonConnectedDevice>().forEach { watch ->
-                        val level = watch.batteryLevel
-                        val prevLevel = batteryLevels[watch.identifier]
-                        if (level == 100 && prevLevel != null && prevLevel < 100
-                            && notified100[watch.identifier] != true) {
-                            postWatchFullyChargedNotification(appContext, watch.name)
-                            notified100[watch.identifier] = true
-                        }
-                        if (level != null && level <= 90 && notified100[watch.identifier] == true) {
-                            notified100[watch.identifier] = false
-                        }
-                        batteryLevels[watch.identifier] = level
                     }
                 }
             }

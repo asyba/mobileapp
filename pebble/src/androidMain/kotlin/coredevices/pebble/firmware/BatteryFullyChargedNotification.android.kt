@@ -2,19 +2,31 @@ package coredevices.pebble.firmware
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import com.eygraber.uri.toAndroidUri
+import coredevices.pebble.RealPebbleDeepLinkHandler.Companion.NOTIFICATION_INTENT_URI_SHOW_WATCHES
 import coredevices.util.R
 import io.rebble.libpebblecommon.connection.AppContext
 
 actual fun postWatchFullyChargedNotification(appContext: AppContext, watchName: String) {
     val context = appContext.context
     context.createBatteryNotificationChannel()
+    val viewIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+    viewIntent?.setData(NOTIFICATION_INTENT_URI_SHOW_WATCHES.toAndroidUri())
+    val viewPendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        viewIntent,
+        PendingIntent.FLAG_IMMUTABLE
+    )
     val builder = NotificationCompat.Builder(context, BATTERY_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
         .setContentTitle("Watch Fully Charged")
         .setContentText("$watchName is fully charged")
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setContentIntent(viewPendingIntent)
         .setAutoCancel(true)
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     notificationManager.notify(WATCH_FULLY_CHARGED_NOTIFICATION_ID, builder.build())

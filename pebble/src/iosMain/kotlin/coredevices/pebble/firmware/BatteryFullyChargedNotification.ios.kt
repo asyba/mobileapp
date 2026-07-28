@@ -1,5 +1,6 @@
 package coredevices.pebble.firmware
 
+import co.touchlab.kermit.Logger
 import io.rebble.libpebblecommon.connection.AppContext
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
@@ -15,5 +16,9 @@ actual fun postWatchFullyChargedNotification(appContext: AppContext, watchName: 
         content,
         UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(1.0, false)
     )
-    UNUserNotificationCenter.currentNotificationCenter().addNotificationRequest(request, null)
+    UNUserNotificationCenter.currentNotificationCenter().addNotificationRequest(request) { error ->
+        if (error != null) {
+            Logger.w("Error scheduling watch fully charged notification: $error")
+        }
+    }
 }
